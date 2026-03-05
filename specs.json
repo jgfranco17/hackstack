@@ -1,7 +1,7 @@
 {
-  "author": "Joaquin Gabriel Franco",
+  "author": "Joaquin Franco",
   "name": "hackstack",
-  "description": "Hackstack: Viewing your files has never been easier",
-  "version": "0.0.3",
+  "description": "Hackstack: Hackathon stack templating tool",
+  "version": "0.0.1",
   "repository": "https://github.com/jgfranco17/hackstack"
 }
