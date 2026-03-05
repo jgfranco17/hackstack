@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/jgfranco17/lazyfile/cli/internal/logging"
+	"github.com/jgfranco17/hackstack/cli/internal/logging"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"

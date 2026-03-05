@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/jgfranco17/lazyfile/cli/entrypoint"
+	"github.com/jgfranco17/hackstack/cli/entrypoint"
 
 	_ "embed" // Required for the //go:embed directive
 )

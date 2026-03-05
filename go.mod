@@ -1,4 +1,4 @@
-module github.com/jgfranco17/lazyfile
+module github.com/jgfranco17/hackstack
 
 go 1.24.0
 

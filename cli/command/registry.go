@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jgfranco17/lazyfile/cli/command/cmds"
-	"github.com/jgfranco17/lazyfile/cli/internal/errorhandling"
-	"github.com/jgfranco17/lazyfile/cli/internal/logging"
+	"github.com/jgfranco17/hackstack/cli/command/cmds"
+	"github.com/jgfranco17/hackstack/cli/internal/errorhandling"
+	"github.com/jgfranco17/hackstack/cli/internal/logging"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

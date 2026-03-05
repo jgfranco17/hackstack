@@ -12,7 +12,7 @@ tidy:
     @echo "All modules synced, Go workspace ready!"
 
 # CLI local run wrapper
-lazyfile *args:
+hackstack *args:
     @go run . {{ args }}
 
 # Run all BDD tests
@@ -37,29 +37,29 @@ build:
         *) echo "Error: Unsupported architecture (${ENV_ARCH})"; exit 1 ;;
     esac
 
-    echo "Building lazyfile for ${OS}/${ARCH}..."
+    echo "Building hackstack for ${OS}/${ARCH}..."
     go mod download all
-    CGO_ENABLED=0 GOOS="${OS}" GOARCH="${ARCH}" go build -o ./lazyfile .
-    echo "Built binary for lazyfile successfully!"
+    CGO_ENABLED=0 GOOS="${OS}" GOARCH="${ARCH}" go build -o ./hackstack .
+    echo "Built binary for hackstack successfully!"
 
 # Install the binary locally
 install-local: build
     #!/usr/bin/env bash
     set -eux
-    echo "Installing lazyfile locally..."
-    BIN_PATH="{{ INSTALL_PATH }}/bin/lazyfile"
-    cp ./lazyfile "${BIN_PATH}"
+    echo "Installing hackstack locally..."
+    BIN_PATH="{{ INSTALL_PATH }}/bin/hackstack"
+    cp ./hackstack "${BIN_PATH}"
     chmod +x "${BIN_PATH}"
-    echo "Installed lazyfile locally!"
+    echo "Installed hackstack locally!"
 
 # Remove the local binary
 uninstall-local:
     #!/usr/bin/env bash
     set -eux
-    echo "Uninstalling lazyfile..."
-    BIN_PATH="{{ INSTALL_PATH }}/bin/lazyfile"
+    echo "Uninstalling hackstack..."
+    BIN_PATH="{{ INSTALL_PATH }}/bin/hackstack"
     rm "${BIN_PATH}"
-    echo "Uninstalled lazyfile!"
+    echo "Uninstalled hackstack!"
 
 # Update the project dependencies
 update-deps:

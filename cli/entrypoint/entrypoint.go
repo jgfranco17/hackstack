@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jgfranco17/lazyfile/cli/command"
+	"github.com/jgfranco17/hackstack/cli/command"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +23,7 @@ func Run(metadata []byte) {
 	}
 
 	command, err := command.New(command.RootCommandOptions{
-		Name:        "lazyfile",
+		Name:        "hackstack",
 		Description: projectMetadata.Description,
 		Version:     projectMetadata.Version,
 	})

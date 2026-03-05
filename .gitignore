@@ -23,7 +23,7 @@ site/
 .idea
 .DS_Store
 node_modules
-lazyfile
+hackstack
 
 # Go workspace
 go.work

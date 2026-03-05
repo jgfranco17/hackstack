@@ -1,4 +1,4 @@
-# LazyFile CLI
+# Hackstack CLI
 
 ---
 

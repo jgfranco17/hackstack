@@ -43,4 +43,4 @@ jobs:
 
       - name: Run binary
         run: |
-          ./lazyfile --help
+          ./hackstack --help

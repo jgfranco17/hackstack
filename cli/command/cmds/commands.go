@@ -3,8 +3,8 @@ package cmds
 import (
 	"fmt"
 
-	"github.com/jgfranco17/lazyfile/cli/internal/errorhandling"
-	"github.com/jgfranco17/lazyfile/cli/internal/logging"
+	"github.com/jgfranco17/hackstack/cli/internal/errorhandling"
+	"github.com/jgfranco17/hackstack/cli/internal/logging"
 	"github.com/spf13/cobra"
 )
 
