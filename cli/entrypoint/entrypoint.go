@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/jgfranco17/hackstack/cli/command"
-	"github.com/spf13/cobra"
 )
 
 type ProjectMetadata struct {
@@ -31,8 +30,6 @@ func Run(metadata []byte) {
 		fmt.Printf("Error creating command: %v\n", err)
 		os.Exit(1)
 	}
-	commandsList := []*cobra.Command{}
-	command.RegisterCommands(commandsList)
 
 	exitCode := command.Execute()
 	os.Exit(exitCode)

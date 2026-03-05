@@ -8,16 +8,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type runCommand struct{}
+type buildCommand struct{}
 
-func (c *runCommand) invoke() *cobra.Command {
+func (c *buildCommand) invoke() *cobra.Command {
 	return &cobra.Command{
-		Use:   "run",
-		Short: "Run the application",
+		Use:   "build",
+		Short: "Build a new project from a template",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			logger := logging.FromContext(ctx)
-			logger.Info("Running the application")
+			logger.Info("Building a new project from a template")
 			return &errorhandling.CommandError{
 				Err:      fmt.Errorf("not implemented"),
 				ExitCode: 1,
@@ -27,7 +27,7 @@ func (c *runCommand) invoke() *cobra.Command {
 	}
 }
 
-func NewRunCommand() *cobra.Command {
-	cmd := &runCommand{}
+func NewBuildCommand() *cobra.Command {
+	cmd := &buildCommand{}
 	return cmd.invoke()
 }

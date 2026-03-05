@@ -101,7 +101,7 @@ func New(options RootCommandOptions) (*CLI, error) {
 	allCleanups := make([]func(), 0, 1+len(options.CleanupFuncs))
 	allCleanups = append(allCleanups, options.CleanupFuncs...)
 
-	root.AddCommand(cmds.NewRunCommand())
+	root.AddCommand(cmds.NewBuildCommand())
 
 	return &CLI{
 		root:     root,
