@@ -129,11 +129,11 @@ func (cr *CLI) Execute() int {
 		var cmdErr *errorhandling.CommandError
 		if ok := errors.As(err, &cmdErr); ok {
 			fmt.Println(cmdErr.String())
-			return cmdErr.ExitCode
+			return cmdErr.ExitCode.Int()
 		} else {
 			fmt.Printf("An unexpected error occurred: %v\n", err)
-			return 1
+			return errorhandling.ExitGenericError.Int()
 		}
 	}
-	return 0
+	return errorhandling.ExitSuccess.Int()
 }

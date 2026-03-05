@@ -7,9 +7,21 @@ import (
 	"github.com/fatih/color"
 )
 
+type ExitCode int
+
+func (e ExitCode) Int() int {
+	return int(e)
+}
+
+const (
+	ExitSuccess       ExitCode = 0
+	ExitGenericError  ExitCode = 1
+	ExitTemplateError ExitCode = 2
+)
+
 type CommandError struct {
 	Err      error
-	ExitCode int
+	ExitCode ExitCode
 	HelpText string
 }
 
