@@ -1,0 +1,6 @@
+# LazyFile CLI
+
+---
+
+> [!NOTE]
+> This CLI is still a beta prototype.

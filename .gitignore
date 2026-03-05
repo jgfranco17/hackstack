@@ -1,0 +1,30 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.python-version
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Virtual environments
+*venv
+
+# Documentation
+site/
+
+# Local development
+.vscode
+.idea
+.DS_Store
+node_modules
+lazyfile
+
+# Go workspace
+go.work
+go.work.sum

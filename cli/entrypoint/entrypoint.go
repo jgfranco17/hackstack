@@ -1,0 +1,39 @@
+package entrypoint
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+
+	"github.com/jgfranco17/lazyfile/cli/command"
+	"github.com/spf13/cobra"
+)
+
+type ProjectMetadata struct {
+	Author      string `json:"author"`
+	Description string `json:"description"`
+	Version     string `json:"version"`
+}
+
+func Run(metadata []byte) {
+	var projectMetadata ProjectMetadata
+	if err := json.Unmarshal(metadata, &projectMetadata); err != nil {
+		fmt.Printf("Error unmarshaling metadata: %v\n", err)
+		panic("failed to unmarshal metadata")
+	}
+
+	command, err := command.New(command.RootCommandOptions{
+		Name:        "lazyfile",
+		Description: projectMetadata.Description,
+		Version:     projectMetadata.Version,
+	})
+	if err != nil {
+		fmt.Printf("Error creating command: %v\n", err)
+		os.Exit(1)
+	}
+	commandsList := []*cobra.Command{}
+	command.RegisterCommands(commandsList)
+
+	exitCode := command.Execute()
+	os.Exit(exitCode)
+}
