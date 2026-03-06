@@ -179,8 +179,8 @@ func TestVerbosityLevels(t *testing.T) {
 			cli.root.SetErr(&buf)
 			cli.root.SetArgs(tt.args)
 
-			exitCode := cli.Execute()
-			assert.Equal(t, 0, exitCode)
+			err = cli.Execute()
+			require.NoError(t, err)
 			assert.Equal(t, tt.expectedLevel, actualLevel)
 
 			cli.Cleanup()
@@ -204,8 +204,8 @@ func TestExecute_HelpFlag(t *testing.T) {
 	cli.root.SetErr(&buf)
 	cli.root.SetArgs([]string{"--help"})
 
-	exitCode := cli.Execute()
-	assert.Equal(t, 0, exitCode)
+	err = cli.Execute()
+	require.NoError(t, err)
 
 	output := buf.String()
 	assert.Contains(t, output, "A test CLI application")
@@ -226,8 +226,8 @@ func TestExecute_VersionFlag(t *testing.T) {
 	cli.root.SetErr(&buf)
 	cli.root.SetArgs([]string{"--version"})
 
-	exitCode := cli.Execute()
-	assert.Equal(t, 0, exitCode)
+	err = cli.Execute()
+	require.NoError(t, err)
 
 	output := buf.String()
 	assert.Contains(t, output, "1.0.0")

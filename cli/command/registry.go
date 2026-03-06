@@ -3,13 +3,11 @@ package command
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/jgfranco17/hackstack/cli/command/cmds"
-	"github.com/jgfranco17/hackstack/cli/internal/errorhandling"
 	"github.com/jgfranco17/hackstack/cli/internal/logging"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -133,16 +131,9 @@ func (cr *CLI) Cleanup() {
 }
 
 // Execute executes the root command.
-func (cr *CLI) Execute() int {
+func (cr *CLI) Execute() error {
 	if err := cr.root.Execute(); err != nil {
-		var cmdErr *errorhandling.CommandError
-		if ok := errors.As(err, &cmdErr); ok {
-			fmt.Println(cmdErr.String())
-			return cmdErr.ExitCode.Int()
-		} else {
-			fmt.Printf("An unexpected error occurred: %v\n", err)
-			return errorhandling.ExitGenericError.Int()
-		}
+		return err
 	}
-	return errorhandling.ExitSuccess.Int()
+	return nil
 }
