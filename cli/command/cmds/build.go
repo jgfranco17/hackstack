@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"os"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -11,6 +14,7 @@ import (
 	"github.com/jgfranco17/hackstack/cli/internal/fileutils"
 	"github.com/jgfranco17/hackstack/cli/internal/logging"
 	"github.com/jgfranco17/hackstack/cli/internal/templating"
+	"github.com/jgfranco17/hackstack/cli/internal/tui"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -137,3 +141,52 @@ type loaderFunc func(ctx context.Context, category string) (fs.FS, error)
 
 // templaterFactory constructs a renderer from a loaded FS and template data.
 type templaterFactory func(files fs.FS, data templating.CLIProject) renderer
+
+// dataSourceFunc resolves TemplateData from a source file path. When sourceFile
+// is empty the implementation should fall back to interactive input.
+type dataSourceFunc func(sourceFile string) (templating.CLIProject, error)
+
+// defaultDataSource is the production dataSourceFunc. It reads from a YAML file
+// when sourceFile is non-empty, otherwise launches the interactive TUI.
+func defaultDataSource(sourceFile string) (templating.CLIProject, error) {
+	if sourceFile != "" {
+		return loadFromYAMLFile(sourceFile)
+	}
+	return promptForData()
+}
+
+// loadFromYAMLFile reads a YAML file at path and decodes it into CLIProject.
+// GoVersion is always overridden with the host runtime version after decoding.
+func loadFromYAMLFile(path string) (templating.CLIProject, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return templating.CLIProject{}, fmt.Errorf("open source file %q: %w", path, err)
+	}
+	defer f.Close()
+
+	data, err := templating.DataFromSource[templating.CLIProject](f)
+	if err != nil {
+		return templating.CLIProject{}, fmt.Errorf("parse source file %q: %w", path, err)
+	}
+
+	if data.GoVersion == "" {
+		data.GoVersion = runtimeGoVersion()
+	}
+
+	if err := data.Validate(); err != nil {
+		return templating.CLIProject{}, err
+	}
+	return *data, nil
+}
+
+// runtimeGoVersion returns the host Go version string without the leading "go"
+// prefix (e.g. "1.24.0").
+func runtimeGoVersion() string {
+	return strings.TrimPrefix(runtime.Version(), "go")
+}
+
+// promptForData launches an interactive TUI to collect Name, Username, and
+// Author. GoVersion is populated automatically from the host runtime.
+func promptForData() (templating.CLIProject, error) {
+	return tui.PromptForCLI()
+}
