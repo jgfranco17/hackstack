@@ -9,3 +9,12 @@ func IsDir(path string) bool {
 	}
 	return fileInfo.IsDir()
 }
+
+// IsDirEmpty reports whether the directory at path contains no entries.
+func IsDirEmpty(path string) (bool, error) {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return false, err
+	}
+	return len(entries) == 0, nil
+}

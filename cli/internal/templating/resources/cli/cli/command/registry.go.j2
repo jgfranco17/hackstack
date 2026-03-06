@@ -3,14 +3,16 @@ package command
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/jgfranco17/hackstack/cli/command/cmds"
-	"github.com/jgfranco17/hackstack/cli/internal/logging"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/{{ .Username }}/{{ .Name }}/cli/command/cmds"
+	"github.com/{{ .Username }}/{{ .Name }}/cli/internal/errorhandling"
+	"github.com/{{ .Username }}/{{ .Name }}/cli/internal/logging"
 )
 
 // CLI is a struct that represents the command-line interface of the application.
@@ -80,19 +82,10 @@ func New(options RootCommandOptions) (*CLI, error) {
 
 			logger := logging.New(cmd.ErrOrStderr(), level)
 			ctx := logging.AddToContext(cmd.Context(), logger)
-
-			ctx, cancel := context.WithCancel(ctx)
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-			go func() {
-				select {
-				case sig := <-c:
-					logger.WithField("signal", sig).Infof("Received signal, exiting")
-					cancel()
-				case <-ctx.Done():
-					// Context was canceled, exit goroutine.
-				}
-			}()
+			// Create a signal-aware context for the entire CLI lifecycle once here.
+			// This ensures signal handling is never duplicated regardless of how many
+			// commands are executed or how many times PersistentPreRunE fires.
+			ctx, _ = signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT, os.Interrupt)
 
 			cmd.SetContext(ctx)
 			return nil
@@ -131,9 +124,16 @@ func (cr *CLI) Cleanup() {
 }
 
 // Execute executes the root command.
-func (cr *CLI) Execute() error {
+func (cr *CLI) Execute() int {
 	if err := cr.root.Execute(); err != nil {
-		return err
+		var cmdErr *errorhandling.CommandError
+		if ok := errors.As(err, &cmdErr); ok {
+			fmt.Println(cmdErr.String())
+			return cmdErr.ExitCode
+		} else {
+			fmt.Printf("An unexpected error occurred: %v\n", err)
+			return 1
+		}
 	}
-	return nil
+	return 0
 }
