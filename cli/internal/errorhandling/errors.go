@@ -17,6 +17,7 @@ const (
 	ExitSuccess       ExitCode = 0
 	ExitGenericError  ExitCode = 1
 	ExitTemplateError ExitCode = 2
+	ExitInputError    ExitCode = 3
 )
 
 type CommandError struct {

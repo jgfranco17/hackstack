@@ -15,8 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type DynamicData map[string]any
-
 type Engine struct {
 	Files fs.FS
 	Data  DynamicData
