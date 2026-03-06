@@ -82,10 +82,19 @@ func New(options RootCommandOptions) (*CLI, error) {
 
 			logger := logging.New(cmd.ErrOrStderr(), level)
 			ctx := logging.AddToContext(cmd.Context(), logger)
-			// Create a signal-aware context for the entire CLI lifecycle once here.
-			// This ensures signal handling is never duplicated regardless of how many
-			// commands are executed or how many times PersistentPreRunE fires.
-			ctx, _ = signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT, os.Interrupt)
+
+			ctx, cancel := context.WithCancel(ctx)
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+			go func() {
+				select {
+				case sig := <-c:
+					logger.WithField("signal", sig).Infof("Received signal, exiting")
+					cancel()
+				case <-ctx.Done():
+					// Context was canceled, exit goroutine.
+				}
+			}()
 
 			cmd.SetContext(ctx)
 			return nil
