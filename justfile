@@ -66,8 +66,3 @@ update-deps:
     @echo "Updating project dependencies..."
     go get -u ./...
     go mod tidy
-
-# Run the docs server locally
-docs:
-    mkdocs build --strict --clean
-    mkdocs serve --open
