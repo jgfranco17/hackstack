@@ -11,12 +11,13 @@ import (
 	"github.com/jgfranco17/hackstack/cli/internal/templating"
 )
 
-// PromptForCLI launches an interactive TUI to collect project details and returns the
-// resulting CLIProject. GoVersion is populated from the host runtime.
+// PromptForCLI launches an interactive TUI that walks the user through each
+// project field one at a time and returns the resulting CLIProject.
+// GoVersion is populated from the host runtime.
 func PromptForCLI() (templating.CLIProject, error) {
-	m, err := tea.NewProgram(newModel(), tea.WithAltScreen()).Run()
+	m, err := tea.NewProgram(newModel()).Run()
 	if err != nil {
-		return templating.CLIProject{}, fmt.Errorf("TUI error: %w", err)
+		return templating.CLIProject{}, fmt.Errorf("failed to load TUI: %w", err)
 	}
 
 	result, ok := m.(model)
@@ -35,20 +36,29 @@ func PromptForCLI() (templating.CLIProject, error) {
 	}, nil
 }
 
-// model is the bubbletea model for the interactive data-entry TUI.
+// fieldDef holds the display label for a single prompt field.
+type fieldDef struct {
+	label string
+}
+
+var fields = []fieldDef{
+	{"Project name"},
+	{"GitHub username"},
+	{"Author name"},
+}
+
+// model is the bubbletea model for the step-by-step data-entry TUI.
 type model struct {
 	inputs    []textinput.Model
-	focused   int
+	step      int
 	cancelled bool
 }
 
-var labels = []string{"Project name", "GitHub username", "Author name"}
-
 func newModel() model {
-	inputs := make([]textinput.Model, len(labels))
-	for i, label := range labels {
+	inputs := make([]textinput.Model, len(fields))
+	for i, f := range fields {
 		ti := textinput.New()
-		ti.Placeholder = label
+		ti.Placeholder = f.label
 		ti.CharLimit = 100
 		if i == 0 {
 			ti.Focus()
@@ -70,44 +80,40 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.cancelled = true
 			return m, tea.Quit
 
-		case tea.KeyTab, tea.KeyShiftTab, tea.KeyEnter:
-			if msg.Type == tea.KeyShiftTab {
-				m.focused--
-			} else {
-				m.focused++
-			}
-
-			if m.focused >= len(m.inputs) {
-				// All fields filled — submit.
+		case tea.KeyEnter:
+			m.step++
+			if m.step >= len(m.inputs) {
+				// All fields confirmed — submit.
 				return m, tea.Quit
 			}
-			if m.focused < 0 {
-				m.focused = 0
-			}
-
-			for i := range m.inputs {
-				if i == m.focused {
-					m.inputs[i].Focus()
-				} else {
-					m.inputs[i].Blur()
-				}
-			}
+			m.inputs[m.step-1].Blur()
+			m.inputs[m.step].Focus()
 			return m, nil
 		}
 	}
 
-	// Forward keystrokes to the focused input.
+	// Forward keystrokes to the current input.
 	var cmd tea.Cmd
-	m.inputs[m.focused], cmd = m.inputs[m.focused].Update(msg)
+	m.inputs[m.step], cmd = m.inputs[m.step].Update(msg)
 	return m, cmd
 }
 
 func (m model) View() string {
-	var b strings.Builder
-	b.WriteString("New hackstack project\n\n")
-	for i, label := range labels {
-		b.WriteString(fmt.Sprintf("%s\n%s\n\n", label, m.inputs[i].View()))
+	// bubbletea calls View once more after tea.Quit is returned; guard against
+	// the step being out of range at that point.
+	if m.step >= len(fields) {
+		return ""
 	}
-	b.WriteString("Tab / Enter to advance • Shift+Tab to go back • Esc to cancel\n")
+	var b strings.Builder
+	for i := 0; i < m.step; i++ {
+		fmt.Fprintf(&b, "%s: %s\n", fields[i].label, m.inputs[i].Value())
+	}
+	if m.step > 0 {
+		b.WriteString("\n")
+	}
+	f := fields[m.step]
+	fmt.Fprintf(&b, "%s (%d/%d)\n", f.label, m.step+1, len(fields))
+	b.WriteString(m.inputs[m.step].View())
+	b.WriteString("\n\nEnter to confirm • Ctrl+C to cancel\n")
 	return b.String()
 }

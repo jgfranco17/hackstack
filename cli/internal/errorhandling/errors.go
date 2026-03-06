@@ -16,8 +16,9 @@ func (e ExitCode) Int() int {
 const (
 	ExitSuccess       ExitCode = 0
 	ExitGenericError  ExitCode = 1
-	ExitTemplateError ExitCode = 2
-	ExitInputError    ExitCode = 3
+	ExitPanicError    ExitCode = 2
+	ExitTemplateError ExitCode = 3
+	ExitInputError    ExitCode = 4
 )
 
 type CommandError struct {

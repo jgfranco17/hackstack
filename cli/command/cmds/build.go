@@ -31,6 +31,7 @@ type buildCommand struct {
 	forceOverwrite bool
 }
 
+// NewBuildCommand constructs the 'build' command with default dependencies.
 func NewBuildCommand() *cobra.Command {
 	cmd := &buildCommand{
 		engineFactory: func(files fs.FS, data templating.CLIProject) renderer {
@@ -152,7 +153,7 @@ func defaultDataSource(sourceFile string) (templating.CLIProject, error) {
 	if sourceFile != "" {
 		return loadFromYAMLFile(sourceFile)
 	}
-	return promptForData()
+	return tui.PromptForCLI()
 }
 
 // loadFromYAMLFile reads a YAML file at path and decodes it into CLIProject.
@@ -183,10 +184,4 @@ func loadFromYAMLFile(path string) (templating.CLIProject, error) {
 // prefix (e.g. "1.24.0").
 func runtimeGoVersion() string {
 	return strings.TrimPrefix(runtime.Version(), "go")
-}
-
-// promptForData launches an interactive TUI to collect Name, Username, and
-// Author. GoVersion is populated automatically from the host runtime.
-func promptForData() (templating.CLIProject, error) {
-	return tui.PromptForCLI()
 }

@@ -12,6 +12,10 @@ import (
 	"github.com/jgfranco17/hackstack/cli/internal/errorhandling"
 )
 
+const (
+	commandName = "hackstack"
+)
+
 type ProjectMetadata struct {
 	Author      string `json:"author"`
 	Description string `json:"description"`
@@ -27,21 +31,27 @@ func readMetadata(rawData []byte) (ProjectMetadata, error) {
 }
 
 func Run(metadata []byte) {
+	defer func() {
+		if r := recover(); r != nil {
+			printError("Application %s crashed: %v", commandName, r)
+			os.Exit(errorhandling.ExitPanicError.Int())
+		}
+	}()
 
 	projectMetadata, err := readMetadata(metadata)
 	if err != nil {
 		printError("Error reading metadata: %v", err)
-		os.Exit(1)
+		os.Exit(errorhandling.ExitInputError.Int())
 	}
 
 	command, err := command.New(command.RootCommandOptions{
-		Name:        "hackstack",
+		Name:        commandName,
 		Description: projectMetadata.Description,
 		Version:     projectMetadata.Version,
 	})
 	if err != nil {
 		printError("Error creating command: %v", err)
-		os.Exit(1)
+		os.Exit(errorhandling.ExitGenericError.Int())
 	}
 
 	var exitCode int
@@ -55,7 +65,6 @@ func Run(metadata []byte) {
 }
 
 func handlerExecError(err error) int {
-
 	var cmdErr *errorhandling.CommandError
 	if ok := errors.As(err, &cmdErr); ok {
 		fmt.Println(cmdErr.String())
