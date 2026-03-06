@@ -8,9 +8,12 @@ wheels/
 .python-version
 
 # Testing
-.coverage
+coverage/
 htmlcov/
-.pytest_cache/
+*.test
+*.out
+*.log
+dump/
 
 # Virtual environments
 *venv

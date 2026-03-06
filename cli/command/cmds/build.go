@@ -15,8 +15,9 @@ import (
 )
 
 type buildCommand struct {
-	engineFactory templaterFactory
-	outputPath    string
+	engineFactory  templaterFactory
+	outputPath     string
+	forceOverwrite bool
 }
 
 func NewBuildCommand() *cobra.Command {
@@ -36,14 +37,6 @@ func (c *buildCommand) invoke() *cobra.Command {
 			logger := logging.FromContext(ctx).WithField("command", "build")
 			category := args[0]
 
-			files, data, err := templating.Load(ctx, category)
-			if err != nil {
-				return &errorhandling.CommandError{
-					Err:      fmt.Errorf("failed to load template resources for category %q: %w", category, err),
-					ExitCode: errorhandling.ExitGenericError,
-					HelpText: "Failed to load template resources. Please check the category name and try again.",
-				}
-			}
 			if !fileutils.IsDir(c.outputPath) {
 				return &errorhandling.CommandError{
 					Err:      fmt.Errorf("output path %q is not a directory", c.outputPath),
@@ -52,6 +45,34 @@ func (c *buildCommand) invoke() *cobra.Command {
 				}
 			}
 
+			empty, err := fileutils.IsDirEmpty(c.outputPath)
+			if err != nil {
+				return &errorhandling.CommandError{
+					Err:      fmt.Errorf("failed to check output directory %q: %w", c.outputPath, err),
+					ExitCode: errorhandling.ExitInputError,
+					HelpText: "The output directory must be accessible before building into it.",
+				}
+			}
+			if !empty {
+				if c.forceOverwrite {
+					logger.Warn("Proceeding with overwrite due to force flag")
+				} else {
+					return &errorhandling.CommandError{
+						Err:      fmt.Errorf("output path %q is not empty", c.outputPath),
+						ExitCode: errorhandling.ExitInputError,
+						HelpText: "The output directory must be empty before building into it.",
+					}
+				}
+			}
+
+			files, data, err := templating.Load(ctx, category)
+			if err != nil {
+				return &errorhandling.CommandError{
+					Err:      fmt.Errorf("failed to load template resources for category %q: %w", category, err),
+					ExitCode: errorhandling.ExitGenericError,
+					HelpText: "Failed to load template resources. Please check the category name and try again.",
+				}
+			}
 			logger.WithFields(logrus.Fields{
 				"category": category,
 				"output":   c.outputPath,
@@ -79,6 +100,7 @@ func (c *buildCommand) invoke() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&c.outputPath, "output", "o", ".", "Output directory for the generated project")
+	cmd.Flags().BoolVarP(&c.forceOverwrite, "force", "f", false, "Force overwrite of existing files in the output directory")
 	return cmd
 }
 

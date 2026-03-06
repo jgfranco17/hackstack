@@ -38,7 +38,6 @@ func (e *CommandError) String() string {
 	redBoldFmt := color.New(color.FgRed).Add(color.Bold).SprintfFunc()
 
 	var renderedMessage strings.Builder
-	renderedMessage.WriteString("\n")
 	renderedMessage.WriteString(redBoldFmt("[ERROR] Hackstack internal error: %s\n", e.Err.Error()))
 	if e.HelpText != "" {
 		renderedMessage.WriteString(fmt.Sprintf("[HELP] %s", e.HelpText))
