@@ -12,7 +12,6 @@ import (
 	"github.com/jgfranco17/hackstack/cli/internal/errorhandling"
 	"github.com/jgfranco17/hackstack/cli/internal/fileutils"
 	"github.com/jgfranco17/hackstack/cli/internal/logging"
-	"github.com/sirupsen/logrus"
 )
 
 type Engine struct {
@@ -29,8 +28,8 @@ func NewEngine(files fs.FS, data DynamicData) *Engine {
 
 func (e *Engine) Render(ctx context.Context, outputPath string) error {
 	logger := logging.FromContext(ctx).WithField("module", "templating")
-	logger.Trace("Rendering template files")
 
+	count := 0
 	walker := func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("walk error at %q: %w", path, err)
@@ -44,16 +43,19 @@ func (e *Engine) Render(ctx context.Context, outputPath string) error {
 		switch {
 		case strings.HasSuffix(path, ".j2"):
 			destPath = strings.TrimSuffix(destPath, ".j2")
-			logger.WithFields(logrus.Fields{"file": path}).Trace("Rendering from template")
+			logger.WithField("file", path).Trace("Rendering from template")
+			count++
 			return renderTemplate(e.Files, path, destPath, e.Data)
 		case strings.HasSuffix(path, ".copy"):
 			destPath = strings.TrimSuffix(destPath, ".copy")
-			logger.WithFields(logrus.Fields{"file": path}).Trace("Copying file")
+			logger.WithField("file", path).Trace("Copying file")
+			count++
 			return fileutils.CopyFile(e.Files, path, destPath)
 		default:
 			return fmt.Errorf("unrecognized resource extension for %q: expected .j2 or .copy", path)
 		}
 	}
+
 	if err := fs.WalkDir(e.Files, ".", walker); err != nil {
 		return &errorhandling.CommandError{
 			Err:      fmt.Errorf("failed to render templates: %w", err),
@@ -61,6 +63,7 @@ func (e *Engine) Render(ctx context.Context, outputPath string) error {
 			HelpText: "Check template resources and verify the contents.",
 		}
 	}
+	logger.WithField("fileCount", count).Debug("Completed render")
 	return nil
 }
 

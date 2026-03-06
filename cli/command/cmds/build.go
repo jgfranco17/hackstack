@@ -1,6 +1,7 @@
 package cmds
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"time"
@@ -15,14 +16,21 @@ import (
 )
 
 type buildCommand struct {
-	engineFactory  templaterFactory
+	// Injectable dependencies for easier testing
+	engineFactory templaterFactory
+	loader        loaderFunc
+
+	// Flags
 	outputPath     string
 	forceOverwrite bool
 }
 
 func NewBuildCommand() *cobra.Command {
 	cmd := &buildCommand{
-		engineFactory: templating.NewEngine,
+		engineFactory: func(files fs.FS, data templating.DynamicData) renderer {
+			return templating.NewEngine(files, data)
+		},
+		loader: templating.Load,
 	}
 	return cmd.invoke()
 }
@@ -65,7 +73,7 @@ func (c *buildCommand) invoke() *cobra.Command {
 				}
 			}
 
-			files, data, err := templating.Load(ctx, category)
+			files, data, err := c.loader(ctx, category)
 			if err != nil {
 				return &errorhandling.CommandError{
 					Err:      fmt.Errorf("failed to load template resources for category %q: %w", category, err),
@@ -90,7 +98,7 @@ func (c *buildCommand) invoke() *cobra.Command {
 				"category": category,
 				"output":   c.outputPath,
 				"duration": time.Since(startTime).String(),
-			}).Info("Template render completed")
+			}).Info("Created full project from template")
 
 			greenFmt := color.New(color.FgGreen).FprintlnFunc()
 			greenFmt(cmd.OutOrStdout(), "Built new templated project, happy hacking!")
@@ -104,4 +112,15 @@ func (c *buildCommand) invoke() *cobra.Command {
 	return cmd
 }
 
-type templaterFactory func(files fs.FS, data templating.DynamicData) *templating.Engine
+// renderer is the minimal interface required by the build command to execute a
+// template render. *templating.Engine satisfies this interface.
+type renderer interface {
+	Render(ctx context.Context, outputPath string) error
+}
+
+// loaderFunc is the signature of the function that loads template resources for
+// a given category. Matches templating.Load so it can be swapped in tests.
+type loaderFunc func(ctx context.Context, category string) (fs.FS, templating.DynamicData, error)
+
+// templaterFactory constructs a renderer from a loaded FS and template data.
+type templaterFactory func(files fs.FS, data templating.DynamicData) renderer
