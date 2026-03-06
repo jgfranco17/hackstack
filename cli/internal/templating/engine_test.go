@@ -25,7 +25,7 @@ func TestEngine_Render(t *testing.T) {
 	tests := []struct {
 		name        string
 		files       fstest.MapFS
-		data        DynamicData
+		data        CLIProject
 		wantFiles   map[string]string // relative output path -> expected content
 		unwantFiles []string          // relative output paths that must NOT exist
 		wantErr     bool
@@ -35,7 +35,7 @@ func TestEngine_Render(t *testing.T) {
 			files: fstest.MapFS{
 				"README.md.copy": {Data: []byte("# Hello world")},
 			},
-			data: DynamicData{},
+			data: CLIProject{},
 			wantFiles: map[string]string{
 				"README.md": "# Hello world",
 			},
@@ -46,7 +46,7 @@ func TestEngine_Render(t *testing.T) {
 			files: fstest.MapFS{
 				"main.go.j2": {Data: []byte("package {{ .Name }}")},
 			},
-			data: DynamicData{"Name": "mypkg"},
+			data: CLIProject{Name: "mypkg"},
 			wantFiles: map[string]string{
 				"main.go": "package mypkg",
 			},
@@ -58,7 +58,7 @@ func TestEngine_Render(t *testing.T) {
 				"cli/cmd/root.go.j2": {Data: []byte("// {{ .Name }}")},
 				"cli/main.go.copy":   {Data: []byte("package main")},
 			},
-			data: DynamicData{"Name": "myapp"},
+			data: CLIProject{Name: "myapp"},
 			wantFiles: map[string]string{
 				"cli/cmd/root.go": "// myapp",
 				"cli/main.go":     "package main",
@@ -70,10 +70,10 @@ func TestEngine_Render(t *testing.T) {
 			files: fstest.MapFS{
 				"go.mod.j2": {Data: []byte("module github.com/{{ .Username }}/{{ .Name }}\n\ngo {{ .GoVersion }}")},
 			},
-			data: DynamicData{
-				"Username":  "jgfranco17",
-				"Name":      "myapp",
-				"GoVersion": "1.24.0",
+			data: CLIProject{
+				Username:  "jgfranco17",
+				Name:      "myapp",
+				GoVersion: "1.24.0",
 			},
 			wantFiles: map[string]string{
 				"go.mod": "module github.com/jgfranco17/myapp\n\ngo 1.24.0",
@@ -84,7 +84,7 @@ func TestEngine_Render(t *testing.T) {
 			files: fstest.MapFS{
 				"broken.go.j2": {Data: []byte("package {{ .Name")},
 			},
-			data:    DynamicData{},
+			data:    CLIProject{},
 			wantErr: true,
 		},
 		{
@@ -92,7 +92,7 @@ func TestEngine_Render(t *testing.T) {
 			files: fstest.MapFS{
 				"README.md": {Data: []byte("# Hello")},
 			},
-			data:    DynamicData{},
+			data:    CLIProject{},
 			wantErr: true,
 		},
 	}

@@ -16,10 +16,10 @@ import (
 
 type Engine struct {
 	Files fs.FS
-	Data  DynamicData
+	Data  CLIProject
 }
 
-func NewEngine(files fs.FS, data DynamicData) *Engine {
+func NewEngine(files fs.FS, data CLIProject) *Engine {
 	return &Engine{
 		Files: files,
 		Data:  data,
@@ -67,7 +67,7 @@ func (e *Engine) Render(ctx context.Context, outputPath string) error {
 	return nil
 }
 
-func renderTemplate(fsys fs.FS, srcPath, destPath string, data DynamicData) error {
+func renderTemplate(fsys fs.FS, srcPath, destPath string, data CLIProject) error {
 	content, err := fs.ReadFile(fsys, srcPath)
 	if err != nil {
 		return fmt.Errorf("read template %q: %w", srcPath, err)

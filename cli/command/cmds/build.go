@@ -19,18 +19,21 @@ type buildCommand struct {
 	// Injectable dependencies for easier testing
 	engineFactory templaterFactory
 	loader        loaderFunc
+	dataSource    dataSourceFunc
 
 	// Flags
 	outputPath     string
+	sourceFile     string
 	forceOverwrite bool
 }
 
 func NewBuildCommand() *cobra.Command {
 	cmd := &buildCommand{
-		engineFactory: func(files fs.FS, data templating.DynamicData) renderer {
+		engineFactory: func(files fs.FS, data templating.CLIProject) renderer {
 			return templating.NewEngine(files, data)
 		},
-		loader: templating.Load,
+		loader:     templating.Load,
+		dataSource: defaultDataSource,
 	}
 	return cmd.invoke()
 }
@@ -73,12 +76,21 @@ func (c *buildCommand) invoke() *cobra.Command {
 				}
 			}
 
-			files, data, err := c.loader(ctx, category)
+			files, err := c.loader(ctx, category)
 			if err != nil {
 				return &errorhandling.CommandError{
 					Err:      fmt.Errorf("failed to load template resources for category %q: %w", category, err),
 					ExitCode: errorhandling.ExitGenericError,
 					HelpText: "Failed to load template resources. Please check the category name and try again.",
+				}
+			}
+
+			data, err := c.dataSource(c.sourceFile)
+			if err != nil {
+				return &errorhandling.CommandError{
+					Err:      fmt.Errorf("failed to resolve template data: %w", err),
+					ExitCode: errorhandling.ExitInputError,
+					HelpText: "Provide a valid --source YAML file or complete the interactive prompt.",
 				}
 			}
 			logger.WithFields(logrus.Fields{
@@ -108,6 +120,7 @@ func (c *buildCommand) invoke() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&c.outputPath, "output", "o", ".", "Output directory for the generated project")
+	cmd.Flags().StringVarP(&c.sourceFile, "source", "s", "", "Path to a YAML file supplying template data (name, username, author, go-version)")
 	cmd.Flags().BoolVarP(&c.forceOverwrite, "force", "f", false, "Force overwrite of existing files in the output directory")
 	return cmd
 }
@@ -118,9 +131,9 @@ type renderer interface {
 	Render(ctx context.Context, outputPath string) error
 }
 
-// loaderFunc is the signature of the function that loads template resources for
-// a given category. Matches templating.Load so it can be swapped in tests.
-type loaderFunc func(ctx context.Context, category string) (fs.FS, templating.DynamicData, error)
+// loaderFunc loads the embedded FS for a given category.
+// Matches templating.Load so it can be swapped in tests.
+type loaderFunc func(ctx context.Context, category string) (fs.FS, error)
 
 // templaterFactory constructs a renderer from a loaded FS and template data.
-type templaterFactory func(files fs.FS, data templating.DynamicData) renderer
+type templaterFactory func(files fs.FS, data templating.CLIProject) renderer

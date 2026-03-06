@@ -120,9 +120,9 @@ func TestBuildCommand(t *testing.T) {
 			},
 			cmd: func(t *testing.T) *buildCommand {
 				var gotCategory string
-				loader := func(_ context.Context, category string) (fs.FS, templating.DynamicData, error) {
+				loader := func(_ context.Context, category string) (fs.FS, error) {
 					gotCategory = category
-					return fstest.MapFS{}, templating.DynamicData{}, nil
+					return fstest.MapFS{}, nil
 				}
 				cmd := newTestBuildCommand(loader, nil)
 				t.Cleanup(func() { assert.Equal(t, "mycat", gotCategory) })
@@ -137,6 +137,52 @@ func TestBuildCommand(t *testing.T) {
 				return newTestBuildCommand(successLoader, nil)
 			},
 			wantErr: true,
+		},
+		{
+			name: "valid --source YAML file is used for template data",
+			args: func(t *testing.T) []string {
+				src := filepath.Join(t.TempDir(), "data.yaml")
+				require.NoError(t, os.WriteFile(src, []byte(
+					"name: myapp\nusername: jgfranco17\nauthor: Jorge\n",
+				), 0644))
+				return []string{"cli", "--output", t.TempDir(), "--source", src}
+			},
+			cmd: func(t *testing.T) *buildCommand {
+				cmd := newTestBuildCommand(successLoader, nil)
+				// Use the real YAML loader so the flag is exercised end-to-end.
+				cmd.dataSource = defaultDataSource
+				return cmd
+			},
+			wantNoErr:  true,
+			wantStdout: "happy hacking",
+		},
+		{
+			name: "--source pointing to non-existent file returns input error",
+			args: func(t *testing.T) []string {
+				return []string{"cli", "--output", t.TempDir(), "--source", "/no/such/file.yaml"}
+			},
+			cmd: func(t *testing.T) *buildCommand {
+				cmd := newTestBuildCommand(successLoader, nil)
+				cmd.dataSource = defaultDataSource
+				return cmd
+			},
+			wantErr:  true,
+			wantExit: errorhandling.ExitInputError,
+		},
+		{
+			name: "dataSource failure returns input error",
+			args: func(t *testing.T) []string {
+				return []string{"cli", "--output", t.TempDir()}
+			},
+			cmd: func(t *testing.T) *buildCommand {
+				cmd := newTestBuildCommand(successLoader, nil)
+				cmd.dataSource = func(_ string) (templating.CLIProject, error) {
+					return templating.CLIProject{}, errors.New("data source failure")
+				}
+				return cmd
+			},
+			wantErr:  true,
+			wantExit: errorhandling.ExitInputError,
 		},
 	}
 
@@ -175,11 +221,15 @@ func (m *mockRenderer) Render(_ context.Context, _ string) error {
 	return m.err
 }
 
-// newTestBuildCommand wires up a buildCommand with injectable loader and renderer.
+// newTestBuildCommand wires up a buildCommand with injectable dependencies.
+// dataSource defaults to successDataSource when nil.
 func newTestBuildCommand(loader loaderFunc, renderErr error) *buildCommand {
 	return &buildCommand{
 		loader: loader,
-		engineFactory: func(_ fs.FS, _ templating.DynamicData) renderer {
+		dataSource: func(_ string) (templating.CLIProject, error) {
+			return templating.CLIProject{Name: "test", Username: "user", Author: "author"}, nil
+		},
+		engineFactory: func(_ fs.FS, _ templating.CLIProject) renderer {
 			return &mockRenderer{err: renderErr}
 		},
 	}
@@ -204,13 +254,13 @@ func runBuild(t *testing.T, cmd *buildCommand, args ...string) testutils.ExecRes
 }
 
 // successLoader is a no-op loader that always returns an empty FS and no error.
-func successLoader(_ context.Context, _ string) (fs.FS, templating.DynamicData, error) {
-	return fstest.MapFS{}, templating.DynamicData{}, nil
+func successLoader(_ context.Context, _ string) (fs.FS, error) {
+	return fstest.MapFS{}, nil
 }
 
 // errorLoader always returns an error.
-func errorLoader(_ context.Context, _ string) (fs.FS, templating.DynamicData, error) {
-	return nil, nil, errors.New("loader failure")
+func errorLoader(_ context.Context, _ string) (fs.FS, error) {
+	return nil, errors.New("loader failure")
 }
 
 // touchFile creates a file inside dir to make it non-empty.
