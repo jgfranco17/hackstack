@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     CGO_ENABLED=0 go build -o /bin/hackstack .
 
 # ========== CLI RUN STAGE ==========
-FROM ubuntu:22.04 AS app
+FROM ubuntu:22.04 AS setup
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
@@ -27,9 +27,11 @@ ARG GROUP_ID=1000
 RUN addgroup --gid $GROUP_ID ${USERNAME} && \
     adduser --disabled-password --gecos '' --uid ${USER_ID} --gid ${GROUP_ID} ${USERNAME}
 
-USER $USERNAME
+USER ${USERNAME}
 ENV HOME=/home/${USERNAME}
 WORKDIR ${HOME}/projects
+
+FROM setup AS app
 
 ENTRYPOINT [ "/bin/hackstack" ]
 CMD ["--help"]
