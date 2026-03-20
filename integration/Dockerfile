@@ -10,7 +10,7 @@ COPY . .
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     CGO_ENABLED=0 go build -o /bin/hackstack .
 
-# ========== CLI RUN STAGE ==========
+# ========== CLI SETUP STAGE ==========
 FROM ubuntu:22.04 AS setup
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -29,8 +29,13 @@ RUN addgroup --gid $GROUP_ID ${USERNAME} && \
 
 USER ${USERNAME}
 ENV HOME=/home/${USERNAME}
-WORKDIR ${HOME}/projects
+ARG PROJECT_DIR="${HOME}/projects"
+WORKDIR ${PROJECT_DIR}
 
+COPY examples/ ./examples/
+RUN mkdir -p "${PROJECT_DIR}/backend" "${PROJECT_DIR}/cli"
+
+# ========== APP RUN STAGE ==========
 FROM setup AS app
 
 ENTRYPOINT [ "/bin/hackstack" ]
