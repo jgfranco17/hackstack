@@ -1,0 +1,8 @@
+# Integration test Docker suite
+services:
+  hackstack:
+    container_name: hackstack
+    image: hackstack:latest
+    build:
+      context: ..
+      dockerfile: integration/Dockerfile

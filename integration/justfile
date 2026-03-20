@@ -1,0 +1,42 @@
+# INTEGRATION TEST SCRIPTS
+
+CAPTURE_OUTPUT_FILE := "output.txt"
+
+# Default target to list available commands
+_default:
+    @just --list --unsorted
+
+##########################################################
+# TEST WORKSPACE SETUP
+##########################################################
+
+# Build the services in Docker
+build:
+	docker compose build
+
+# Workspace teardown
+clean:
+	-docker compose down
+	-rm {{ CAPTURE_OUTPUT_FILE }}
+
+##########################################################
+# INTERACTIVE COMMANDS
+##########################################################
+
+# Run the CLI image with envs
+hackstack *args:
+    @docker compose run \
+        --remove-orphans --rm \
+        hackstack {{ args }}
+
+##########################################################
+# TEST EXECUTION
+##########################################################
+
+# Run the full test suite
+test-all: test-base
+    @echo "hackstack CLI integration test completed!"
+
+test-base:
+    @just hackstack --version | grep -n "hackstack"
+    @just hackstack --help 2>&1 | grep -n "hackstack"
