@@ -18,8 +18,8 @@ hackstack *args:
 # Run all BDD tests
 test:
     @echo "Running unit tests!"
-    go clean -testcache
-    go test -cover ./...
+    @go clean -testcache
+    go test -cover -race ./...
 
 # Build the binary
 build:

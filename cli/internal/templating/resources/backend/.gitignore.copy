@@ -1,0 +1,18 @@
+# Local development
+.vscode
+.idea
+.DS_Store
+node_modules
+
+# Testing
+coverage/
+*.test
+*.log
+*.out
+
+# Documentation
+site/
+
+# Go workspace
+go.work
+go.work.sum

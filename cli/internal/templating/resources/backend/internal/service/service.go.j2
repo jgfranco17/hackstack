@@ -1,0 +1,51 @@
+package service
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/sirupsen/logrus"
+	"github.com/{{ .Username }}/{{ .Name }}/internal/logging"
+	"github.com/{{ .Username }}/{{ .Name }}/internal/service/handlers"
+)
+
+type Service struct {
+	router *chi.Mux
+	logger *logrus.Logger
+	config Config
+}
+
+func New(cfg Config, logger *logrus.Logger) *Service {
+	s := &Service{
+		router: chi.NewRouter(),
+		logger: logger,
+		config: cfg,
+	}
+	s.router.Use(middleware.RequestID)
+	s.router.Use(middleware.Recoverer)
+	s.router.Use(s.loggerMiddleware)
+	s.registerRoutes()
+	return s
+}
+
+func (s *Service) Start() error {
+	addr := fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
+	s.logger.WithFields(logrus.Fields{
+		"host": s.config.Host,
+		"port": s.config.Port,
+	}).Info("Server starting")
+	return http.ListenAndServe(addr, s.router)
+}
+
+func (s *Service) loggerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := logging.AddToContext(r.Context(), s.logger)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (s *Service) registerRoutes() {
+	s.router.Get("/health", handlers.GetHealth)
+}
