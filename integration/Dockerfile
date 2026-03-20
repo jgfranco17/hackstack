@@ -1,0 +1,45 @@
+# ========== CLI BUILD STAGE ==========
+ARG GO_VERSION=1.25
+FROM golang:${GO_VERSION}-alpine AS build
+
+WORKDIR /src
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=bind,source=go.mod,target=go.mod \
+    go mod download -x
+COPY . .
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    CGO_ENABLED=0 go build -o /bin/hackstack .
+
+# ========== CLI SETUP STAGE ==========
+FROM ubuntu:22.04 AS env-setup
+SHELL ["/bin/bash", "-c"]
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl ca-certificates xz-utils && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /bin/hackstack /bin/hackstack
+
+# Tests should use non-root to simulate a real user.
+ARG USERNAME=testuser
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+RUN addgroup --gid $GROUP_ID ${USERNAME} && \
+    adduser --disabled-password --gecos '' --uid ${USER_ID} --gid ${GROUP_ID} ${USERNAME}
+
+FROM env-setup AS workspace-setup
+USER ${USERNAME}
+ENV HOME=/home/${USERNAME}
+ARG PROJECT_DIR="${HOME}/projects"
+WORKDIR ${PROJECT_DIR}
+
+COPY examples/ ./examples/
+RUN mkdir -p "${PROJECT_DIR}/backend" "${PROJECT_DIR}/cli"
+
+# ========== APP RUN STAGE ==========
+FROM workspace-setup AS app
+SHELL ["/usr/bin/env", "bash", "-c"]
+
+ENTRYPOINT [ "/bin/hackstack" ]
+CMD ["--help"]
