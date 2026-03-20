@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/sirupsen/logrus"
+	"github.com/{{ .Username }}/{{ .Name }}/internal/config"
 	"github.com/{{ .Username }}/{{ .Name }}/internal/logging"
 	"github.com/{{ .Username }}/{{ .Name }}/internal/service/handlers"
 )
@@ -14,10 +15,10 @@ import (
 type Service struct {
 	router *chi.Mux
 	logger *logrus.Logger
-	config Config
+	config config.ServiceSettings
 }
 
-func New(cfg Config, logger *logrus.Logger) *Service {
+func New(cfg config.ServiceSettings, logger *logrus.Logger) *Service {
 	s := &Service{
 		router: chi.NewRouter(),
 		logger: logger,
