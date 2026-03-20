@@ -15,7 +15,7 @@ func (e ExitCode) Int() int {
 
 const (
 	ExitSuccess       ExitCode = 0
-	ExitGenericError  ExitCode = 1
+	ExitRuntimeError  ExitCode = 1
 	ExitPanicError    ExitCode = 2
 	ExitTemplateError ExitCode = 3
 	ExitInputError    ExitCode = 4

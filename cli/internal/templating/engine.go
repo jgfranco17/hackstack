@@ -7,9 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"text/template"
 
-	"github.com/jgfranco17/hackstack/cli/internal/errorhandling"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/jgfranco17/hackstack/cli/internal/fileutils"
 	"github.com/jgfranco17/hackstack/cli/internal/logging"
 )
@@ -29,7 +31,9 @@ func NewEngine(files fs.FS, data CLIProject) *Engine {
 func (e *Engine) Render(ctx context.Context, outputPath string) error {
 	logger := logging.FromContext(ctx).WithField("module", "templating")
 
-	count := 0
+	var count atomic.Int64
+	g, ctx := errgroup.WithContext(ctx)
+
 	walker := func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("walk error at %q: %w", path, err)
@@ -40,30 +44,38 @@ func (e *Engine) Render(ctx context.Context, outputPath string) error {
 
 		destPath := filepath.Join(outputPath, filepath.FromSlash(path))
 
+		var work func() error
 		switch {
 		case strings.HasSuffix(path, ".j2"):
 			destPath = strings.TrimSuffix(destPath, ".j2")
-			logger.WithField("file", path).Trace("Rendering from template")
-			count++
-			return renderTemplate(e.Files, path, destPath, e.Data)
+			work = func() error {
+				logger.WithField("file", path).Trace("Rendering from template")
+				return renderTemplate(e.Files, path, destPath, e.Data)
+			}
 		case strings.HasSuffix(path, ".copy"):
 			destPath = strings.TrimSuffix(destPath, ".copy")
-			logger.WithField("file", path).Trace("Copying file")
-			count++
-			return fileutils.CopyFile(e.Files, path, destPath)
+			work = func() error {
+				logger.WithField("file", path).Trace("Copying file")
+				return fileutils.CopyFile(e.Files, path, destPath)
+			}
 		default:
-			return fmt.Errorf("unrecognized resource extension for %q: expected .j2 or .copy", path)
+			return fmt.Errorf("unrecognized resource extension for %q", path)
 		}
+
+		count.Add(1)
+		g.Go(work)
+		return nil
 	}
 
 	if err := fs.WalkDir(e.Files, ".", walker); err != nil {
-		return &errorhandling.CommandError{
-			Err:      fmt.Errorf("failed to render templates: %w", err),
-			ExitCode: errorhandling.ExitTemplateError,
-			HelpText: "Check template resources and verify the contents.",
-		}
+		return fmt.Errorf("failed to render templates: %w", err)
 	}
-	logger.WithField("fileCount", count).Debug("Completed render")
+
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("failed to render templates: %w", err)
+	}
+
+	logger.WithField("fileCount", count.Load()).Debug("Completed render")
 	return nil
 }
 
