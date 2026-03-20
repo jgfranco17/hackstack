@@ -47,5 +47,7 @@ func (s *Service) loggerMiddleware(next http.Handler) http.Handler {
 }
 
 func (s *Service) registerRoutes() {
-	s.router.Get("/health", handlers.GetHealth)
+	s.router.Route("/v1", func(r chi.Router) {
+		r.Get("/health", handlers.GetHealth)
+	})
 }
