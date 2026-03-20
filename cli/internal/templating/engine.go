@@ -14,13 +14,23 @@ import (
 
 	"github.com/jgfranco17/hackstack/cli/internal/fileutils"
 	"github.com/jgfranco17/hackstack/cli/internal/logging"
+	"github.com/sirupsen/logrus"
 )
 
+const (
+	extensionTemplate = ".j2"
+	extensionRawCopy  = ".copy"
+)
+
+// Engine is the entity responsible for rendering embedded template
+// files with provided source data.
 type Engine struct {
 	Files fs.FS
 	Data  CLIProject
 }
 
+// NewEngine creates a new templating engine instance with the provided
+// embedded files and source data.
 func NewEngine(files fs.FS, data CLIProject) *Engine {
 	return &Engine{
 		Files: files,
@@ -28,6 +38,9 @@ func NewEngine(files fs.FS, data CLIProject) *Engine {
 	}
 }
 
+// Render processes the embedded template files and writes the output to the specified directory.
+// It walks through all files in the embedded FS, rendering templates and copying raw files as
+// needed. The function returns an error if any step of the rendering process fails.
 func (e *Engine) Render(ctx context.Context, outputPath string) error {
 	logger := logging.FromContext(ctx).WithField("module", "templating")
 
@@ -36,7 +49,7 @@ func (e *Engine) Render(ctx context.Context, outputPath string) error {
 
 	walker := func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("walk error at %q: %w", path, err)
+			return fmt.Errorf("walk error at %s: %w", path, err)
 		}
 		if d.IsDir() {
 			return nil
@@ -46,16 +59,22 @@ func (e *Engine) Render(ctx context.Context, outputPath string) error {
 
 		var work func() error
 		switch {
-		case strings.HasSuffix(path, ".j2"):
-			destPath = strings.TrimSuffix(destPath, ".j2")
+		case strings.HasSuffix(path, extensionTemplate):
+			destPath = strings.TrimSuffix(destPath, extensionTemplate)
 			work = func() error {
-				logger.WithField("file", path).Trace("Rendering from template")
+				logger.WithFields(logrus.Fields{
+					"source":      path,
+					"destination": destPath,
+				}).Trace("Rendering from template")
 				return renderTemplate(e.Files, path, destPath, e.Data)
 			}
-		case strings.HasSuffix(path, ".copy"):
-			destPath = strings.TrimSuffix(destPath, ".copy")
+		case strings.HasSuffix(path, extensionRawCopy):
+			destPath = strings.TrimSuffix(destPath, extensionRawCopy)
 			work = func() error {
-				logger.WithField("file", path).Trace("Copying file")
+				logger.WithFields(logrus.Fields{
+					"source":      path,
+					"destination": destPath,
+				}).Trace("Copying raw file")
 				return fileutils.CopyFile(e.Files, path, destPath)
 			}
 		default:
