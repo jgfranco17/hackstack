@@ -51,7 +51,7 @@ func Run(metadata []byte) {
 	})
 	if err != nil {
 		printError("Error creating command: %v", err)
-		os.Exit(errorhandling.ExitGenericError.Int())
+		os.Exit(errorhandling.ExitRuntimeError.Int())
 	}
 
 	var exitCode int
@@ -71,7 +71,7 @@ func handlerExecError(err error) int {
 		return cmdErr.ExitCode.Int()
 	}
 	fmt.Printf("An unexpected error occurred: %v\n", err)
-	return errorhandling.ExitGenericError.Int()
+	return errorhandling.ExitRuntimeError.Int()
 }
 
 func printError(format string, args ...any) {

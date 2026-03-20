@@ -1,0 +1,25 @@
+package handlers
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/{{ .Username }}/{{ .Name }}/internal/logging"
+)
+
+// GetHealth is a simple health check endpoint that returns a JSON
+// response with the status and timestamp.
+func GetHealth(w http.ResponseWriter, r *http.Request) {
+	type healthResponse struct {
+		Status    string `json:"status"`
+		Timestamp string `json:"timestamp"`
+	}
+
+	logger := logging.FromContext(r.Context())
+	logger.Info("Health check requested")
+
+	writeJSON(w, http.StatusOK, healthResponse{
+		Status:    "ok",
+		Timestamp: time.Now().Format(time.DateTime),
+	})
+}

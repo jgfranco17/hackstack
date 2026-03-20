@@ -85,7 +85,7 @@ func (c *buildCommand) invoke() *cobra.Command {
 			if err != nil {
 				return &errorhandling.CommandError{
 					Err:      fmt.Errorf("failed to load template resources for category %q: %w", category, err),
-					ExitCode: errorhandling.ExitGenericError,
+					ExitCode: errorhandling.ExitTemplateError,
 					HelpText: "Failed to load template resources. Please check the category name and try again.",
 				}
 			}
@@ -107,10 +107,11 @@ func (c *buildCommand) invoke() *cobra.Command {
 			if err := templater.Render(ctx, c.outputPath); err != nil {
 				return &errorhandling.CommandError{
 					Err:      fmt.Errorf("failed to render template %q: %w", category, err),
-					ExitCode: errorhandling.ExitGenericError,
+					ExitCode: errorhandling.ExitTemplateError,
 					HelpText: "Please check the template and try again.",
 				}
 			}
+
 			logger.WithFields(logrus.Fields{
 				"category": category,
 				"output":   c.outputPath,

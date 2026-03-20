@@ -89,7 +89,7 @@ func TestBuildCommand(t *testing.T) {
 				return newTestBuildCommand(errorLoader, nil)
 			},
 			wantErr:  true,
-			wantExit: errorhandling.ExitGenericError,
+			wantExit: errorhandling.ExitTemplateError,
 		},
 		{
 			name: "renderer failure returns generic error",
@@ -100,7 +100,7 @@ func TestBuildCommand(t *testing.T) {
 				return newTestBuildCommand(successLoader, errors.New("render failure"))
 			},
 			wantErr:  true,
-			wantExit: errorhandling.ExitGenericError,
+			wantExit: errorhandling.ExitTemplateError,
 		},
 		{
 			name: "successful render on empty dir prints success message",

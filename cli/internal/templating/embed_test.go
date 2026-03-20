@@ -67,16 +67,43 @@ func TestCLIProject_Validate(t *testing.T) {
 }
 
 func TestLoad_ValidCategory(t *testing.T) {
+	testCases := []struct {
+		name     string
+		category string
+		invalid  bool
+	}{
+		{name: "backend category", category: "backend"},
+		{name: "cli category", category: "cli"},
+		{name: "category case insensitivity", category: "CLI"},
+		{name: "invalid category", category: "unknown", invalid: true},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := testContext(t)
+			sub, err := Load(ctx, tc.category)
+
+			if tc.invalid {
+				require.Error(t, err)
+				assert.ErrorContains(t, err, "invalid templating category")
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, sub)
+
+				entries, err := fs.ReadDir(sub, ".")
+				require.NoError(t, err)
+				assert.NotEmpty(t, entries)
+			}
+		})
+	}
+}
+
+func TestLoad_InvalidCategory(t *testing.T) {
 	ctx := testContext(t)
-	sub, err := Load(ctx, "cli")
 
-	require.NoError(t, err)
-	require.NotNil(t, sub)
+	_, err := Load(ctx, "unknown")
 
-	// Confirm the returned FS is non-empty.
-	entries, err := fs.ReadDir(sub, ".")
-	require.NoError(t, err)
-	assert.NotEmpty(t, entries, "loaded FS should contain template files")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `invalid templating category "unknown"`)
 }
 
 func TestLoad_CategoryIsCaseInsensitive(t *testing.T) {

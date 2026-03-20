@@ -2,8 +2,6 @@ module github.com/jgfranco17/hackstack
 
 go 1.24.2
 
-toolchain go1.24.3
-
 require (
 	github.com/charmbracelet/bubbles v1.0.0
 	github.com/charmbracelet/bubbletea v1.3.10
@@ -11,6 +9,7 @@ require (
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/sync v0.12.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

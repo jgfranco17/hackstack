@@ -11,7 +11,7 @@ import (
 	"github.com/jgfranco17/hackstack/cli/internal/logging"
 )
 
-//go:embed resources
+//go:embed all:resources
 var embeddedResources embed.FS
 
 // CLIProject holds the variables required to render the CLI project templates.
@@ -41,10 +41,22 @@ func (d *CLIProject) Validate() error {
 	return nil
 }
 
+// Load retrieves the embedded template files for the specified category and returns
+// them as an fs.FS instance for use in rendering. The category must be one of the
+// currently-supported categories.
 func Load(ctx context.Context, category string) (fs.FS, error) {
 	logger := logging.FromContext(ctx).WithField("module", "templating")
 
+	allowedCategories := map[string]bool{
+		"backend": true,
+		"cli":     true,
+	}
+
 	category = strings.ToLower(category)
+	if _, ok := allowedCategories[category]; !ok {
+		return nil, fmt.Errorf("invalid templating category %q", category)
+	}
+
 	subDirPath := filepath.Join("resources", category)
 	sub, err := fs.Sub(embeddedResources, subDirPath)
 	if err != nil {

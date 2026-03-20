@@ -11,7 +11,7 @@ import (
 func TestCommandError(t *testing.T) {
 	mockErr := CommandError{
 		Err:      errors.New("mock error"),
-		ExitCode: ExitGenericError,
+		ExitCode: ExitRuntimeError,
 		HelpText: "This is some help text.",
 	}
 
