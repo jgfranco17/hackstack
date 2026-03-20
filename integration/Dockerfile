@@ -11,7 +11,8 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     CGO_ENABLED=0 go build -o /bin/hackstack .
 
 # ========== CLI SETUP STAGE ==========
-FROM ubuntu:22.04 AS setup
+FROM ubuntu:22.04 AS env-setup
+SHELL ["/bin/bash", "-c"]
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
@@ -27,6 +28,7 @@ ARG GROUP_ID=1000
 RUN addgroup --gid $GROUP_ID ${USERNAME} && \
     adduser --disabled-password --gecos '' --uid ${USER_ID} --gid ${GROUP_ID} ${USERNAME}
 
+FROM env-setup AS workspace-setup
 USER ${USERNAME}
 ENV HOME=/home/${USERNAME}
 ARG PROJECT_DIR="${HOME}/projects"
@@ -36,7 +38,8 @@ COPY examples/ ./examples/
 RUN mkdir -p "${PROJECT_DIR}/backend" "${PROJECT_DIR}/cli"
 
 # ========== APP RUN STAGE ==========
-FROM setup AS app
+FROM workspace-setup AS app
+SHELL ["/usr/bin/env", "bash", "-c"]
 
 ENTRYPOINT [ "/bin/hackstack" ]
 CMD ["--help"]

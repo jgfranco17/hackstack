@@ -35,19 +35,21 @@ hackstack *args:
 
 # Run the full test suite
 test-all: test-base test-build
-    @echo "hackstack CLI integration test completed!"
+    @echo "Hackstack CLI integration test completed!"
 
+# Base tests to verify the CLI is working and accessible
 test-base:
     #!/usr/bin/env bash
     just hackstack --version | grep -n "hackstack"
     just hackstack --help 2>&1 | grep -n "hackstack"
 
+# Test the build command with a sample datasource
 test-build:
     #!/usr/bin/env bash
     just hackstack build --help
-    just hackstack -vv build backend \
+    just hackstack -vvv build backend \
         --output "/home/testuser/projects/backend" \
         --source examples/datasource.yaml
-    just hackstack -vv build cli \
+    just hackstack -vvv build cli \
         --output "/home/testuser/projects/cli" \
         --source examples/datasource.yaml
